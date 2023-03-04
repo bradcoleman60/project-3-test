@@ -14,10 +14,14 @@ const urlCashFlow ='https://data.sec.gov/api/xbrl/frames/us-gaap/NetCashProvided
 
 const tickers = ['AAL', 'MQ', 'AMZN', 'OKTA']
 
+
+//We should USE Ticker to look up CIK in ticker-cik-seed.js and return the ticker and the name
 const companies = ['American Airlines Group Inc.', 'Marqeta, Inc.', 'AMAZON.COM, INC.', 'Okta, Inc.'];
 
+//This holds the array of 3 stories titles and links for any of the tickers selected
 var storiesArray =[];
 
+//Experiment with looking up cik with the tickers
 const CIK = tickers.map((el) => {
   return cikTickerData.filter(item => item.ticker === el).map(item => item.cik)
  })
@@ -32,7 +36,7 @@ console.log("Names:", Names1)
 // console.log(cikTickerData)
 
 
-
+//For each ticker selected this fetches yahoo.finance stories. 
 tickers.forEach((el) => {
 const options = {
   method: 'GET',
@@ -51,7 +55,7 @@ axios.request(options).then(function (response) {
     storiesArray.push({ticker: el, title: response.data.news[i].title, link: response.data.news[i].link})
 
   }
-  
+  //I dont no how to get this array of obects out of this function. 
   console.log("STORIES ARRAY ====> ", storiesArray)
   
   
@@ -74,7 +78,7 @@ axios.request(options).then(function (response) {
 })
 
 
-
+// This does 4 calls to SEC.GOV to fetch Revenue, Cash, Net Income(loss) and cash flow
 app.get('/', async (req, res) => {
     try {
       //Fetch Revenues  
@@ -95,61 +99,62 @@ app.get('/', async (req, res) => {
 
       const tableData = {};
   
-      // Initialize the table data object with empty arrays for each company
-      for (const company of companies) {
-        tableData[company] = {
-          revenue: null,
-          netIncome: null,
-          cash: null,
-          cashFlow: null
+    
+// Initialize the table data object with empty arrays for each company
+for (const company of companies) {
+  tableData[company] = [];
+}
 
+// Populate the table data object with the revenue values for each company
+for (const item of data) {
+  const company = item['entityName'];
+  const value = parseInt(item['val'])/1000000000;
+  if (tableData.hasOwnProperty(company)) {
+    tableData[company].push(value);
+  }
+}
 
+//Populate the table data object with the net income/ loss values for each company
+for (const item of dataNet) {
+  const company = item['entityName'];
+  const value = parseInt(item['val'])/1000000000;
+  if (tableData.hasOwnProperty(company)) {
+    tableData[company].push(value);
+  }
+};
 
-        };
+//Populate the table data object with cash values for each company
+for (const item of dataCash) {
+  const company = item['entityName'];
+  const value = parseInt(item['val'])/1000000000;
+  if (tableData.hasOwnProperty(company)) {
+    tableData[company].push(value);
+  }
+};
+
+  //Populate the table data object with cash values for each company
+  for (const item of dataCashFlow) {
+      const company = item['entityName'];
+      const value = parseInt(item['val'])/1000000000;
+      if (tableData.hasOwnProperty(company)) {
+      tableData[company].push(value);
       }
-  
-      // Populate the table data object with the revenue values for each company
-      for (const item of data) {
-        const company = item['entityName'];
-        const value = parseInt(item['val'])/1000000000;
-        if (tableData.hasOwnProperty(company)) {
-          tableData[company].revenue = value;
-        }
-      }
-      
-      //Populate the table data object with the net income/ loss values for each company
-      for (const item of dataNet) {
-        const company = item['entityName'];
-        const value = parseInt(item['val'])/1000000000;
-        if (tableData.hasOwnProperty(company)) {
-          tableData[company].netIncome =value;
-        }
-      };
+  };
 
-      //Populate the table data object with cash values for each company
-      for (const item of dataCash) {
-        const company = item['entityName'];
-        const value = parseInt(item['val'])/1000000000;
-        if (tableData.hasOwnProperty(company)) {
-          tableData[company].cash = value;
-        }
-      };
+console.log("table data: ",tableData)
 
-        //Populate the table data object with cash values for each company
-        for (const item of dataCashFlow) {
-            const company = item['entityName'];
-            const value = parseInt(item['val'])/1000000000;
-            if (tableData.hasOwnProperty(company)) {
-            tableData[company].cashFlow = value;
-            }
-        };
-
-      console.log("table data: ",tableData)
-
-//////////////////////////////////////
-// // Initialize the table data object with empty arrays for each company
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//THIS WAS MY ATTEMPT TO PUSH THE DATA BY COMPANY INTO AND OBJECT WHICH I THINK WOULD BE BETTER
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Initialize the table data object with empty arrays for each company
 // for (const company of companies) {
-//   tableData[company] = [];
+//   tableData[company] = {
+//     revenue: null,
+//     netIncome: null,
+//     cash: null,
+//     cashFlow: null
+
+//   };
 // }
 
 // // Populate the table data object with the revenue values for each company
@@ -157,7 +162,7 @@ app.get('/', async (req, res) => {
 //   const company = item['entityName'];
 //   const value = parseInt(item['val'])/1000000000;
 //   if (tableData.hasOwnProperty(company)) {
-//     tableData[company].push(value);
+//     tableData[company].revenue = value;
 //   }
 // }
 
@@ -166,7 +171,7 @@ app.get('/', async (req, res) => {
 //   const company = item['entityName'];
 //   const value = parseInt(item['val'])/1000000000;
 //   if (tableData.hasOwnProperty(company)) {
-//     tableData[company].push(value);
+//     tableData[company].netIncome =value;
 //   }
 // };
 
@@ -175,7 +180,7 @@ app.get('/', async (req, res) => {
 //   const company = item['entityName'];
 //   const value = parseInt(item['val'])/1000000000;
 //   if (tableData.hasOwnProperty(company)) {
-//     tableData[company].push(value);
+//     tableData[company].cash = value;
 //   }
 // };
 
@@ -184,14 +189,14 @@ app.get('/', async (req, res) => {
 //       const company = item['entityName'];
 //       const value = parseInt(item['val'])/1000000000;
 //       if (tableData.hasOwnProperty(company)) {
-//       tableData[company].push(value);
+//       tableData[company].cashFlow = value;
 //       }
 //   };
 
 // console.log("table data: ",tableData)
 
-/////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////
   
       const html = `
         <html>
